@@ -34,7 +34,7 @@
         </div>
     </main>
 
-    <!-- Botón Flotante para Modo Admin (Esquina inferior derecha) -->
+    <!-- Botón Flotante para Modo Admin -->
     <button id="admin-toggle-btn" class="fixed bottom-6 right-6 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg z-40" title="Modo Administrador">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
     </button>
@@ -72,28 +72,22 @@
         </div>
     </div>
 
-    <!-- Integración de Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuración e Inicialización de Firebase
-        const firebaseConfig = {
-  apiKey: "AIzaSyDbO9gHgynTQaicR4sxayQYJlLUqpAu724",
-  authDomain: "ess-logistics-hub.firebaseapp.com",
-  projectId: "ess-logistics-hub",
-  storageBucket: "ess-logistics-hub.firebasestorage.app",
-  messagingSenderId: "680597745288",
-  appId: "1:680597745288:web:97d9cd4b1ac468d95cb93d"
-};
-
+        // ==========================================
+        // 1. ESTADO Y ELEMENTOS DE INTERFAZ
+        // ==========================================
         let apps = [];
         let isAdmin = false;
+        let isFirebaseActive = false;
         let currentUser = null;
         let unsubscribe = null;
+        let db = null;
+        let appId = 'ess-logistics-oficial';
 
-        // Elementos del DOM
         const appsGrid = document.getElementById('apps-grid');
         const spinner = document.getElementById('loading-spinner');
         const modal = document.getElementById('add-modal');
@@ -105,123 +99,34 @@
         const saveText = document.getElementById('save-text');
         const saveSpinner = document.getElementById('save-spinner');
 
-        // Autenticación de Firebase
-        const initAuth = async () => {
-            try {
-                spinner.classList.remove('hidden');
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Error al autenticar:", error);
-                spinner.classList.add('hidden');
-            }
-        };
-
-        // Observador de Estado de Autenticación
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                loadApps();
-            }
-        });
-
-        // Iniciar Autenticación
-        initAuth();
-
-        // Cargar Aplicaciones desde Firestore
-        function loadApps() {
-            if (!currentUser) return;
-            
-            // Ruta pública para que todos los usuarios puedan ver y hacer click
-            const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
-            
-            if (unsubscribe) unsubscribe(); // Limpiar listener anterior si existe
-            
-            unsubscribe = onSnapshot(appsRef, (snapshot) => {
-                apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Ordenar por fecha de creación
-                apps.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                spinner.classList.add('hidden');
-                renderApps();
-            }, (error) => {
-                console.error("Error al cargar aplicaciones:", error);
-                spinner.classList.add('hidden');
-            });
-        }
-
-        // --- Renderizado Visual ---
-        function renderApps() {
-            appsGrid.innerHTML = '';
-
-            apps.forEach(app => {
-                const wrapper = document.createElement('div');
-                wrapper.className = "flex flex-col items-center w-full group";
-                
-                // Si NO es admin, toda la tarjeta es clickeable
-                const onclickAction = !isAdmin ? `onclick="window.open('${app.url}', '_blank')"` : "";
-                const cursorStyle = !isAdmin ? "cursor-pointer" : "cursor-default";
-                const hoverEffect = !isAdmin ? "group-hover:-translate-y-2 group-hover:shadow-2xl" : "";
-
-                // Estructura de la tarjeta: Ícono dentro de caja blanca (90%), título fuera
-                let cardHTML = `
-                    <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300 transform ${hoverEffect} ${cursorStyle}" ${onclickAction}>
-                        <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm transition-transform duration-300 ${!isAdmin ? 'group-hover:scale-105' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
-                    </div>
-                    <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] transition-colors ${cursorStyle}" ${onclickAction}>${app.name}</h3>
-                `;
-
-                // Botón de eliminar (Solo visible en modo Admin)
-                if (isAdmin) {
-                    cardHTML = `
-                        <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300">
-                            <button class="delete-btn absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg transition-colors z-20 border-2 border-white" data-id="${app.id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            </button>
-                            <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm opacity-50 grayscale transition-all" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
-                        </div>
-                        <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] opacity-80">${app.name} (Editar)</h3>
-                    `;
-                }
-
-                wrapper.innerHTML = cardHTML;
-                appsGrid.appendChild(wrapper);
-            });
-
-            // Tarjeta de "Agregar App" (Solo Admin)
-            if (isAdmin) {
-                const addWrapper = document.createElement('div');
-                addWrapper.className = "flex flex-col items-center w-full group cursor-pointer";
-                addWrapper.id = "btn-open-modal";
-                
-                addWrapper.innerHTML = `
-                    <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white/20 border-2 border-dashed border-white/60 rounded-3xl flex items-center justify-center transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/30 group-hover:border-white">
-                        <div class="w-16 h-16 flex items-center justify-center bg-white text-[#85be6d] rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide opacity-80 group-hover:opacity-100">Agregar App</h3>
-                `;
-                appsGrid.appendChild(addWrapper);
-
-                // Agregar listener para abrir el modal
-                document.getElementById('btn-open-modal').addEventListener('click', openModal);
-                
-                // Agregar listeners para botones de eliminar
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteApp(btn.getAttribute('data-id'));
-                    });
-                });
-            }
-        }
-
-        // --- Interacciones UI ---
+        // ==========================================
+        // 2. CONFIGURACIÓN DE FIREBASE (¡Pega aquí tus datos!)
+        // ==========================================
         
-        // Botón Admin
+        let firebaseConfig = {};
+
+        // Verificamos si estamos en el entorno de pruebas de Canvas
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = typeof __app_id !== 'undefined' ? __app_id : appId;
+        } else {
+            // ---> CONFIGURACIÓN OFICIAL DE TU PROYECTO <---
+            firebaseConfig = {
+                apiKey: "AIzaSyDbO9gHgynTQaicR4sxayQYJlLUqpAu724",
+                authDomain: "ess-logistics-hub.firebaseapp.com",
+                projectId: "ess-logistics-hub",
+                storageBucket: "ess-logistics-hub.firebasestorage.app",
+                messagingSenderId: "680597745288",
+                appId: "1:680597745288:web:97d9cd4b1ac468d95cb93d"
+            };
+        }
+
+        // ==========================================
+        // 3. EVENTOS DE INTERFAZ (UI)
+        // (Esto asegura que el botón SIEMPRE funcione)
+        // ==========================================
+        
+        // Activar/Desactivar Modo Admin
         adminBtn.addEventListener('click', () => {
             isAdmin = !isAdmin;
             
@@ -236,11 +141,10 @@
                 adminBtn.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
                 adminBtn.classList.add('bg-white/20', 'hover:bg-white/40');
             }
-            
             renderApps();
         });
 
-        // Abrir/Cerrar Modal
+        // Modal de Agregar App
         function openModal() {
             modal.classList.remove('hidden');
             setTimeout(() => {
@@ -260,53 +164,176 @@
 
         document.getElementById('close-modal-btn').addEventListener('click', closeModal);
 
-        // --- Funciones CRUD Firestore ---
+        // Renderizar Aplicaciones en Pantalla
+        function renderApps() {
+            appsGrid.innerHTML = '';
 
-        // Agregar
+            apps.forEach((app, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex flex-col items-center w-full group";
+                
+                const onclickAction = !isAdmin ? `onclick="window.open('${app.url}', '_blank')"` : "";
+                const cursorStyle = !isAdmin ? "cursor-pointer" : "cursor-default";
+                const hoverEffect = !isAdmin ? "group-hover:-translate-y-2 group-hover:shadow-2xl" : "";
+
+                let cardHTML = `
+                    <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300 transform ${hoverEffect} ${cursorStyle}" ${onclickAction}>
+                        <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm transition-transform duration-300 ${!isAdmin ? 'group-hover:scale-105' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
+                    </div>
+                    <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] transition-colors ${cursorStyle}" ${onclickAction}>${app.name}</h3>
+                `;
+
+                if (isAdmin) {
+                    cardHTML = `
+                        <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300">
+                            <button class="delete-btn absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg transition-colors z-20 border-2 border-white" data-id="${app.id || index}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>
+                            <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm opacity-50 grayscale transition-all" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
+                        </div>
+                        <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] opacity-80">${app.name}</h3>
+                    `;
+                }
+
+                wrapper.innerHTML = cardHTML;
+                appsGrid.appendChild(wrapper);
+            });
+
+            if (isAdmin) {
+                const addWrapper = document.createElement('div');
+                addWrapper.className = "flex flex-col items-center w-full group cursor-pointer";
+                addWrapper.id = "btn-open-modal";
+                
+                addWrapper.innerHTML = `
+                    <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white/20 border-2 border-dashed border-white/60 rounded-3xl flex items-center justify-center transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/30 group-hover:border-white">
+                        <div class="w-16 h-16 flex items-center justify-center bg-white text-[#85be6d] rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide opacity-80 group-hover:opacity-100">Agregar App</h3>
+                `;
+                appsGrid.appendChild(addWrapper);
+
+                document.getElementById('btn-open-modal').addEventListener('click', openModal);
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteApp(btn.getAttribute('data-id'));
+                    });
+                });
+            }
+        }
+
+        // ==========================================
+        // 4. LÓGICA DE FIREBASE Y GUARDADO
+        // ==========================================
+
+        // Iniciar Firebase de forma segura
+        async function initApp() {
+            if (!firebaseConfig.apiKey) {
+                // Si no hay configuración, funciona en modo local (se borra al recargar)
+                console.warn("Firebase no conectado. Las apps no se guardarán en la nube.");
+                renderApps();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                db = getFirestore(app);
+                isFirebaseActive = true;
+                
+                spinner.classList.remove('hidden');
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) loadAppsFromCloud();
+                });
+            } catch (error) {
+                console.error("Error al inicializar Firebase:", error);
+                renderApps(); // Renderiza vacío si falla
+            }
+        }
+
+        // Cargar desde la nube
+        function loadAppsFromCloud() {
+            const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
+            if (unsubscribe) unsubscribe();
+            
+            unsubscribe = onSnapshot(appsRef, (snapshot) => {
+                apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                apps.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                spinner.classList.add('hidden');
+                renderApps();
+            }, (error) => {
+                console.error("Error al cargar:", error);
+                spinner.classList.add('hidden');
+            });
+        }
+
+        // Guardar Nueva App
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            if (!currentUser) return;
             
-            // Estado de carga en el botón
-            saveText.innerText = "Guardando...";
-            saveSpinner.classList.remove('hidden');
-            saveBtn.disabled = true;
-
             const newApp = {
                 name: document.getElementById('app-name').value,
                 url: document.getElementById('app-url').value,
                 icon: document.getElementById('app-icon').value,
                 createdAt: Date.now()
             };
-            
-            try {
-                const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
-                await addDoc(appsRef, newApp);
+
+            if (isFirebaseActive && currentUser) {
+                // Guardar en la Nube
+                saveText.innerText = "Guardando...";
+                saveSpinner.classList.remove('hidden');
+                saveBtn.disabled = true;
+
+                try {
+                    const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
+                    await addDoc(appsRef, newApp);
+                    closeModal();
+                } catch (error) {
+                    alert("Hubo un error al guardar en la nube.");
+                } finally {
+                    saveText.innerText = "Guardar App";
+                    saveSpinner.classList.add('hidden');
+                    saveBtn.disabled = false;
+                }
+            } else {
+                // Guardar Temporalmente (Local)
+                alert("⚠️ Has agregado la App, pero NO SE GUARDARÁ permanentemente porque falta configurar Firebase.");
+                apps.push(newApp);
                 closeModal();
-            } catch (error) {
-                console.error("Error al agregar app:", error);
-                alert("Hubo un error al guardar la aplicación.");
-            } finally {
-                saveText.innerText = "Guardar App";
-                saveSpinner.classList.add('hidden');
-                saveBtn.disabled = false;
+                renderApps();
             }
         });
 
-        // Eliminar
-        async function deleteApp(docId) {
-            if (!currentUser) return;
-            
-            if(confirm('¿Estás seguro de eliminar esta aplicación del Hub permanentemente?')) {
-                try {
-                    const appRef = doc(db, 'artifacts', appId, 'public', 'data', 'apps', docId);
-                    await deleteDoc(appRef);
-                } catch (error) {
-                    console.error("Error al eliminar app:", error);
-                    alert("No se pudo eliminar la aplicación.");
+        // Eliminar App
+        async function deleteApp(id) {
+            if(confirm('¿Estás seguro de eliminar esta aplicación del Hub?')) {
+                if (isFirebaseActive && currentUser) {
+                    try {
+                        const appRef = doc(db, 'artifacts', appId, 'public', 'data', 'apps', id);
+                        await deleteDoc(appRef);
+                    } catch (error) {
+                        alert("No se pudo eliminar de la nube.");
+                    }
+                } else {
+                    apps = apps.filter((app, index) => app.id !== id && index != id);
+                    renderApps();
                 }
             }
         }
+
+        // Arrancar la aplicación
+        initApp();
     </script>
 </body>
 </html>
