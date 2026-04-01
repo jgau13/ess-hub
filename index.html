@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E.S.S. Logistics - App Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Filtro para convertir el logo SVG/PNG a color blanco sólido */
+        .logo-blanco {
+            filter: brightness(0) invert(1);
+        }
+    </style>
+</head>
+<body class="bg-[#85be6d] min-h-screen font-sans flex flex-col relative overflow-x-hidden">
+
+    <!-- Encabezado -->
+    <header class="pt-12 pb-10 flex flex-col items-center justify-center text-center px-4">
+        <img src="https://economysignsupply.com/wp-content/uploads/2024/07/ess-logo-svg-100.svg" 
+             alt="Economy Sign Supply" 
+             class="h-16 mb-4 logo-blanco">
+        <h1 class="text-3xl md:text-5xl font-bold text-white tracking-wide drop-shadow-md">E.S.S. LOGISTICS</h1>
+        <p class="text-white mt-3 text-sm font-semibold uppercase tracking-[0.2em] bg-black/10 px-4 py-1.5 rounded-full backdrop-blur-sm" id="mode-indicator">Portal de Aplicaciones</p>
+    </header>
+
+    <!-- Contenedor Principal de Apps -->
+    <main class="flex-grow max-w-5xl mx-auto w-full px-6 pb-24">
+        <div id="loading-spinner" class="flex justify-center items-center py-12 hidden">
+            <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        </div>
+        
+        <div id="apps-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6 justify-items-center">
+            <!-- Las aplicaciones se inyectarán aquí mediante JavaScript -->
+        </div>
+    </main>
+
+    <!-- Botón Flotante para Modo Admin (Esquina inferior derecha) -->
+    <button id="admin-toggle-btn" class="fixed bottom-6 right-6 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg z-40" title="Modo Administrador">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+
+    <!-- Modal para Agregar Nueva App -->
+    <div id="add-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 transform scale-95 transition-transform duration-300" id="modal-content">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Agregar Nueva App</h2>
+            
+            <form id="add-app-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre de la App</label>
+                    <input type="text" id="app-name" required placeholder="Ej. Generador de Firmas" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">URL de la App (Destino)</label>
+                    <input type="url" id="app-url" required placeholder="https://..." class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">URL del Ícono (Imagen)</label>
+                    <input type="url" id="app-icon" required placeholder="https://.../icono.png" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none">
+                    <p class="text-xs text-slate-500 mt-1">Se recomienda usar iconos PNG con fondo transparente.</p>
+                </div>
+
+                <div class="flex gap-3 pt-4 border-t mt-6">
+                    <button type="button" id="close-modal-btn" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" id="save-app-btn" class="flex-1 px-4 py-3 bg-[#85be6d] hover:bg-[#6ba054] text-white font-semibold rounded-lg transition-colors flex justify-center items-center">
+                        <span id="save-text">Guardar App</span>
+                        <svg id="save-spinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Integración de Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuración e Inicialización de Firebase
+        const firebaseConfig = {
+  apiKey: "AIzaSyDbO9gHgynTQaicR4sxayQYJlLUqpAu724",
+  authDomain: "ess-logistics-hub.firebaseapp.com",
+  projectId: "ess-logistics-hub",
+  storageBucket: "ess-logistics-hub.firebasestorage.app",
+  messagingSenderId: "680597745288",
+  appId: "1:680597745288:web:97d9cd4b1ac468d95cb93d"
+};
+
+        let apps = [];
+        let isAdmin = false;
+        let currentUser = null;
+        let unsubscribe = null;
+
+        // Elementos del DOM
+        const appsGrid = document.getElementById('apps-grid');
+        const spinner = document.getElementById('loading-spinner');
+        const modal = document.getElementById('add-modal');
+        const modalContent = document.getElementById('modal-content');
+        const form = document.getElementById('add-app-form');
+        const modeIndicator = document.getElementById('mode-indicator');
+        const adminBtn = document.getElementById('admin-toggle-btn');
+        const saveBtn = document.getElementById('save-app-btn');
+        const saveText = document.getElementById('save-text');
+        const saveSpinner = document.getElementById('save-spinner');
+
+        // Autenticación de Firebase
+        const initAuth = async () => {
+            try {
+                spinner.classList.remove('hidden');
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Error al autenticar:", error);
+                spinner.classList.add('hidden');
+            }
+        };
+
+        // Observador de Estado de Autenticación
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                loadApps();
+            }
+        });
+
+        // Iniciar Autenticación
+        initAuth();
+
+        // Cargar Aplicaciones desde Firestore
+        function loadApps() {
+            if (!currentUser) return;
+            
+            // Ruta pública para que todos los usuarios puedan ver y hacer click
+            const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
+            
+            if (unsubscribe) unsubscribe(); // Limpiar listener anterior si existe
+            
+            unsubscribe = onSnapshot(appsRef, (snapshot) => {
+                apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Ordenar por fecha de creación
+                apps.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                spinner.classList.add('hidden');
+                renderApps();
+            }, (error) => {
+                console.error("Error al cargar aplicaciones:", error);
+                spinner.classList.add('hidden');
+            });
+        }
+
+        // --- Renderizado Visual ---
+        function renderApps() {
+            appsGrid.innerHTML = '';
+
+            apps.forEach(app => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex flex-col items-center w-full group";
+                
+                // Si NO es admin, toda la tarjeta es clickeable
+                const onclickAction = !isAdmin ? `onclick="window.open('${app.url}', '_blank')"` : "";
+                const cursorStyle = !isAdmin ? "cursor-pointer" : "cursor-default";
+                const hoverEffect = !isAdmin ? "group-hover:-translate-y-2 group-hover:shadow-2xl" : "";
+
+                // Estructura de la tarjeta: Ícono dentro de caja blanca (90%), título fuera
+                let cardHTML = `
+                    <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300 transform ${hoverEffect} ${cursorStyle}" ${onclickAction}>
+                        <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm transition-transform duration-300 ${!isAdmin ? 'group-hover:scale-105' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
+                    </div>
+                    <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] transition-colors ${cursorStyle}" ${onclickAction}>${app.name}</h3>
+                `;
+
+                // Botón de eliminar (Solo visible en modo Admin)
+                if (isAdmin) {
+                    cardHTML = `
+                        <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300">
+                            <button class="delete-btn absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg transition-colors z-20 border-2 border-white" data-id="${app.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>
+                            <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm opacity-50 grayscale transition-all" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
+                        </div>
+                        <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] opacity-80">${app.name} (Editar)</h3>
+                    `;
+                }
+
+                wrapper.innerHTML = cardHTML;
+                appsGrid.appendChild(wrapper);
+            });
+
+            // Tarjeta de "Agregar App" (Solo Admin)
+            if (isAdmin) {
+                const addWrapper = document.createElement('div');
+                addWrapper.className = "flex flex-col items-center w-full group cursor-pointer";
+                addWrapper.id = "btn-open-modal";
+                
+                addWrapper.innerHTML = `
+                    <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white/20 border-2 border-dashed border-white/60 rounded-3xl flex items-center justify-center transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/30 group-hover:border-white">
+                        <div class="w-16 h-16 flex items-center justify-center bg-white text-[#85be6d] rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide opacity-80 group-hover:opacity-100">Agregar App</h3>
+                `;
+                appsGrid.appendChild(addWrapper);
+
+                // Agregar listener para abrir el modal
+                document.getElementById('btn-open-modal').addEventListener('click', openModal);
+                
+                // Agregar listeners para botones de eliminar
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteApp(btn.getAttribute('data-id'));
+                    });
+                });
+            }
+        }
+
+        // --- Interacciones UI ---
+        
+        // Botón Admin
+        adminBtn.addEventListener('click', () => {
+            isAdmin = !isAdmin;
+            
+            if (isAdmin) {
+                modeIndicator.innerText = "Modo Administrador Activo";
+                modeIndicator.className = "mt-3 text-sm font-bold uppercase tracking-widest text-red-100 bg-red-600 px-4 py-1.5 rounded-full shadow-md";
+                adminBtn.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
+                adminBtn.classList.remove('bg-white/20', 'hover:bg-white/40');
+            } else {
+                modeIndicator.innerText = "Portal de Aplicaciones";
+                modeIndicator.className = "text-white mt-3 text-sm font-semibold uppercase tracking-[0.2em] bg-black/10 px-4 py-1.5 rounded-full backdrop-blur-sm";
+                adminBtn.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
+                adminBtn.classList.add('bg-white/20', 'hover:bg-white/40');
+            }
+            
+            renderApps();
+        });
+
+        // Abrir/Cerrar Modal
+        function openModal() {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                form.reset();
+            }, 300);
+        }
+
+        document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+
+        // --- Funciones CRUD Firestore ---
+
+        // Agregar
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            // Estado de carga en el botón
+            saveText.innerText = "Guardando...";
+            saveSpinner.classList.remove('hidden');
+            saveBtn.disabled = true;
+
+            const newApp = {
+                name: document.getElementById('app-name').value,
+                url: document.getElementById('app-url').value,
+                icon: document.getElementById('app-icon').value,
+                createdAt: Date.now()
+            };
+            
+            try {
+                const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
+                await addDoc(appsRef, newApp);
+                closeModal();
+            } catch (error) {
+                console.error("Error al agregar app:", error);
+                alert("Hubo un error al guardar la aplicación.");
+            } finally {
+                saveText.innerText = "Guardar App";
+                saveSpinner.classList.add('hidden');
+                saveBtn.disabled = false;
+            }
+        });
+
+        // Eliminar
+        async function deleteApp(docId) {
+            if (!currentUser) return;
+            
+            if(confirm('¿Estás seguro de eliminar esta aplicación del Hub permanentemente?')) {
+                try {
+                    const appRef = doc(db, 'artifacts', appId, 'public', 'data', 'apps', docId);
+                    await deleteDoc(appRef);
+                } catch (error) {
+                    console.error("Error al eliminar app:", error);
+                    alert("No se pudo eliminar la aplicación.");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
