@@ -15,12 +15,17 @@
 <body class="bg-[#85be6d] min-h-screen font-sans flex flex-col relative overflow-x-hidden">
 
     <!-- Encabezado -->
-    <header class="pt-12 pb-10 flex flex-col items-center justify-center text-center px-4">
+    <header class="pt-12 pb-10 flex flex-col items-center justify-center text-center px-4 relative">
         <img src="https://economysignsupply.com/wp-content/uploads/2024/07/ess-logo-svg-100.svg" 
              alt="Economy Sign Supply" 
              class="h-16 mb-4 logo-blanco">
         <h1 class="text-3xl md:text-5xl font-bold text-white tracking-wide drop-shadow-md">E.S.S. LOGISTICS</h1>
         <p class="text-white mt-3 text-sm font-semibold uppercase tracking-[0.2em] bg-black/10 px-4 py-1.5 rounded-full backdrop-blur-sm" id="mode-indicator">Portal de Aplicaciones</p>
+        
+        <!-- Botón para cambiar PIN (Solo visible en Modo Admin) -->
+        <button id="change-pin-btn" onclick="window.openChangePinModal()" class="hidden mt-3 text-xs text-white bg-white/20 hover:bg-white/40 px-3 py-1.5 rounded-full transition-colors backdrop-blur-sm border border-white/30 shadow-sm">
+            Cambiar PIN Admin
+        </button>
     </header>
 
     <!-- Contenedor Principal de Apps -->
@@ -35,14 +40,14 @@
     </main>
 
     <!-- Botón Flotante para Modo Admin -->
-    <button id="admin-toggle-btn" class="fixed bottom-6 right-6 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg z-40" title="Modo Administrador">
+    <button id="admin-toggle-btn" class="fixed bottom-6 right-6 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg z-40 border border-white/30" title="Modo Administrador">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
     </button>
 
     <!-- Modal para Agregar Nueva App -->
     <div id="add-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 transform scale-95 transition-transform duration-300" id="modal-content">
-            <h2 class="text-2xl font-bold text-slate-800 mb-6">Agregar Nueva App</h2>
+            <h2 id="modal-title" class="text-2xl font-bold text-slate-800 mb-6">Agregar Nueva App</h2>
             
             <form id="add-app-form" class="space-y-4">
                 <div>
@@ -56,9 +61,18 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">URL del Ícono (Imagen)</label>
-                    <input type="url" id="app-icon" required placeholder="https://.../icono.png" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none">
-                    <p class="text-xs text-slate-500 mt-1">Se recomienda usar iconos PNG con fondo transparente.</p>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Ícono (Subir Imagen)</label>
+                    <input type="file" id="app-icon-file" accept="image/*" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#85be6d]/10 file:text-[#85be6d] hover:file:bg-[#85be6d]/20">
+                    <p class="text-xs text-slate-500 mt-1">Se recomienda imagen PNG con fondo transparente.</p>
+                    <div id="icon-preview-container" class="mt-2 hidden">
+                        <img id="icon-preview" src="" alt="Vista previa" class="h-16 w-16 object-contain rounded-lg border border-slate-200 p-1 bg-white">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">PIN de Acceso (Opcional)</label>
+                    <input type="password" id="app-pin" placeholder="Dejar vacío para acceso libre" maxlength="4" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none">
+                    <p class="text-xs text-slate-500 mt-1">4 dígitos. Si lo dejas en blanco, cualquier usuario podrá entrar.</p>
                 </div>
 
                 <div class="flex gap-3 pt-4 border-t mt-6">
@@ -72,10 +86,36 @@
         </div>
     </div>
 
+    <!-- Modal PIN (Reutilizable para Admin y Apps) -->
+    <div id="pin-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs mx-4 transform scale-95 transition-transform duration-300" id="pin-modal-content">
+            <h2 class="text-xl font-bold text-slate-800 mb-4 text-center" id="pin-modal-title">Ingresar PIN</h2>
+            <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-full text-center text-3xl tracking-[0.5em] p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#85be6d] focus:border-[#85be6d] outline-none mb-2 font-mono">
+            <p id="pin-error" class="text-red-500 text-sm text-center hidden mb-4 font-semibold">PIN incorrecto. Intenta de nuevo.</p>
+            <div class="flex gap-3 mt-4">
+                <button type="button" onclick="window.closePinModal()" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">Cancelar</button>
+                <button type="button" onclick="window.verifyPin()" class="flex-1 px-4 py-3 bg-[#85be6d] hover:bg-[#6ba054] text-white font-semibold rounded-lg transition-colors">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar PIN Admin -->
+    <div id="change-pin-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs mx-4 transform scale-95 transition-transform duration-300" id="change-pin-modal-content">
+            <h2 class="text-xl font-bold text-slate-800 mb-2 text-center">Cambiar PIN Admin</h2>
+            <p class="text-sm text-slate-500 text-center mb-4">Ingresa el nuevo PIN de 4 dígitos para acceder al modo administrador.</p>
+            <input type="password" id="new-pin-input" maxlength="4" placeholder="Nuevo PIN" class="w-full text-center text-2xl tracking-[0.5em] p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none mb-4 font-mono">
+            <div class="flex gap-3">
+                <button type="button" onclick="window.closeChangePinModal()" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">Cancelar</button>
+                <button type="button" onclick="window.saveNewAdminPin()" class="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
         // 1. ESTADO Y ELEMENTOS DE INTERFAZ
@@ -84,9 +124,16 @@
         let isAdmin = false;
         let isFirebaseActive = false;
         let currentUser = null;
-        let unsubscribe = null;
+        let unsubscribeApps = null;
+        let unsubscribeSettings = null;
         let db = null;
         let appId = 'ess-logistics-oficial';
+        
+        let adminPin = '0000'; // PIN Maestro por defecto
+        let currentExpectedPin = '';
+        let pinSuccessCallback = null;
+        let currentIconBase64 = '';
+        let editingAppId = null;
 
         const appsGrid = document.getElementById('apps-grid');
         const spinner = document.getElementById('loading-spinner');
@@ -95,22 +142,20 @@
         const form = document.getElementById('add-app-form');
         const modeIndicator = document.getElementById('mode-indicator');
         const adminBtn = document.getElementById('admin-toggle-btn');
+        const changePinBtn = document.getElementById('change-pin-btn');
         const saveBtn = document.getElementById('save-app-btn');
         const saveText = document.getElementById('save-text');
         const saveSpinner = document.getElementById('save-spinner');
 
         // ==========================================
-        // 2. CONFIGURACIÓN DE FIREBASE (¡Pega aquí tus datos!)
+        // 2. CONFIGURACIÓN DE FIREBASE
         // ==========================================
-        
         let firebaseConfig = {};
 
-        // Verificamos si estamos en el entorno de pruebas de Canvas
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
             appId = typeof __app_id !== 'undefined' ? __app_id : appId;
         } else {
-            // ---> CONFIGURACIÓN OFICIAL DE TU PROYECTO <---
             firebaseConfig = {
                 apiKey: "AIzaSyDbO9gHgynTQaicR4sxayQYJlLUqpAu724",
                 authDomain: "ess-logistics-hub.firebaseapp.com",
@@ -122,74 +167,283 @@
         }
 
         // ==========================================
-        // 3. EVENTOS DE INTERFAZ (UI)
-        // (Esto asegura que el botón SIEMPRE funcione)
+        // 3. EVENTOS DE UI Y MANEJO DE PIN (Globales)
         // ==========================================
         
-        // Activar/Desactivar Modo Admin
+        // Función Global para abrir apps protegidas
+        window.handleAppClick = function(id) {
+            const app = apps.find(a => a.id === id);
+            if (!app) return;
+
+            if (app.pin && app.pin.trim() !== "") {
+                window.openPinModal(`Acceso a ${app.name}`, app.pin, () => {
+                    window.open(app.url, '_blank');
+                });
+            } else {
+                window.open(app.url, '_blank');
+            }
+        };
+
+        // Lógica del Botón Administrador
         adminBtn.addEventListener('click', () => {
-            isAdmin = !isAdmin;
-            
+            if (!isAdmin) {
+                // Pedir PIN antes de entrar a modo admin
+                window.openPinModal('PIN de Administrador', adminPin, () => {
+                    toggleAdminState(true);
+                });
+            } else {
+                // Salir del modo admin libremente
+                toggleAdminState(false);
+            }
+        });
+
+        function toggleAdminState(state) {
+            isAdmin = state;
             if (isAdmin) {
                 modeIndicator.innerText = "Modo Administrador Activo";
                 modeIndicator.className = "mt-3 text-sm font-bold uppercase tracking-widest text-red-100 bg-red-600 px-4 py-1.5 rounded-full shadow-md";
-                adminBtn.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
-                adminBtn.classList.remove('bg-white/20', 'hover:bg-white/40');
+                adminBtn.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600', 'border-red-400');
+                adminBtn.classList.remove('bg-white/20', 'hover:bg-white/40', 'border-white/30');
+                changePinBtn.classList.remove('hidden');
             } else {
                 modeIndicator.innerText = "Portal de Aplicaciones";
                 modeIndicator.className = "text-white mt-3 text-sm font-semibold uppercase tracking-[0.2em] bg-black/10 px-4 py-1.5 rounded-full backdrop-blur-sm";
-                adminBtn.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
-                adminBtn.classList.add('bg-white/20', 'hover:bg-white/40');
+                adminBtn.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600', 'border-red-400');
+                adminBtn.classList.add('bg-white/20', 'hover:bg-white/40', 'border-white/30');
+                changePinBtn.classList.add('hidden');
             }
             renderApps();
+        }
+
+        // --- MANEJO DEL MODAL REUTILIZABLE DE PIN ---
+        window.openPinModal = function(title, expectedPin, onSuccess) {
+            document.getElementById('pin-modal-title').innerText = title;
+            currentExpectedPin = expectedPin;
+            pinSuccessCallback = onSuccess;
+            
+            const input = document.getElementById('pin-input');
+            input.value = '';
+            document.getElementById('pin-error').classList.add('hidden');
+            
+            const pinModal = document.getElementById('pin-modal');
+            pinModal.classList.remove('hidden');
+            setTimeout(() => {
+                pinModal.classList.remove('opacity-0');
+                document.getElementById('pin-modal-content').classList.remove('scale-95');
+                input.focus();
+            }, 10);
+        };
+
+        window.closePinModal = function() {
+            const pinModal = document.getElementById('pin-modal');
+            pinModal.classList.add('opacity-0');
+            document.getElementById('pin-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                pinModal.classList.add('hidden');
+            }, 300);
+        };
+
+        window.verifyPin = function() {
+            const input = document.getElementById('pin-input').value;
+            if (input === currentExpectedPin) {
+                window.closePinModal();
+                if (pinSuccessCallback) pinSuccessCallback();
+            } else {
+                document.getElementById('pin-error').classList.remove('hidden');
+                document.getElementById('pin-input').value = '';
+                document.getElementById('pin-input').focus();
+            }
+        };
+
+        // Permitir usar la tecla "Enter" en el input del PIN
+        document.getElementById('pin-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                window.verifyPin();
+            }
         });
 
-        // Modal de Agregar App
-        function openModal() {
+        // --- MANEJO DEL MODAL CAMBIAR PIN ADMIN ---
+        window.openChangePinModal = function() {
+            document.getElementById('new-pin-input').value = '';
+            const changeModal = document.getElementById('change-pin-modal');
+            changeModal.classList.remove('hidden');
+            setTimeout(() => {
+                changeModal.classList.remove('opacity-0');
+                document.getElementById('change-pin-modal-content').classList.remove('scale-95');
+                document.getElementById('new-pin-input').focus();
+            }, 10);
+        };
+
+        window.closeChangePinModal = function() {
+            const changeModal = document.getElementById('change-pin-modal');
+            changeModal.classList.add('opacity-0');
+            document.getElementById('change-pin-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                changeModal.classList.add('hidden');
+            }, 300);
+        };
+
+        window.saveNewAdminPin = async function() {
+            const newPin = document.getElementById('new-pin-input').value;
+            if (newPin.length !== 4) {
+                alert("El PIN debe tener exactamente 4 dígitos.");
+                return;
+            }
+            
+            adminPin = newPin; // Actualización Local
+            
+            if (isFirebaseActive && currentUser) {
+                try {
+                    // Guardar el nuevo PIN en Firestore de forma permanente
+                    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admin');
+                    await setDoc(settingsRef, { pin: newPin }, { merge: true });
+                } catch (e) {
+                    console.error("Error guardando PIN", e);
+                    alert("Error guardando PIN en la nube, pero se actualizó temporalmente.");
+                }
+            }
+            
+            window.closeChangePinModal();
+            alert("PIN de Administrador actualizado correctamente.");
+        };
+
+        // --- MANEJO DEL MODAL AGREGAR/EDITAR APP ---
+        window.openAddModal = function() {
+            editingAppId = null;
+            document.getElementById('modal-title').innerText = "Agregar Nueva App";
+            document.getElementById('app-icon-file').required = true;
+            
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 modalContent.classList.remove('scale-95');
             }, 10);
-        }
+        };
 
-        function closeModal() {
+        window.openEditModal = function(id) {
+            const app = apps.find(a => a.id === id);
+            if (!app) return;
+
+            editingAppId = id;
+            document.getElementById('modal-title').innerText = "Editar App";
+            document.getElementById('app-name').value = app.name;
+            document.getElementById('app-url').value = app.url;
+            document.getElementById('app-pin').value = app.pin || '';
+            
+            // Ya no es obligatorio subir imagen si solo quieres editar el texto
+            document.getElementById('app-icon-file').required = false;
+            currentIconBase64 = app.icon;
+            document.getElementById('icon-preview').src = currentIconBase64;
+            document.getElementById('icon-preview-container').classList.remove('hidden');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        };
+
+        function closeAddModal() {
             modal.classList.add('opacity-0');
             modalContent.classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
                 form.reset();
+                currentIconBase64 = '';
+                document.getElementById('icon-preview-container').classList.add('hidden');
+                document.getElementById('icon-preview').src = '';
             }, 300);
         }
 
-        document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+        document.getElementById('close-modal-btn').addEventListener('click', closeAddModal);
+
+        // Manejo de la subida y compresión de imagen
+        document.getElementById('app-icon-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 200; // Redimensionar para optimizar base de datos
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convertir a texto codificado para guardar en la base de datos
+                    currentIconBase64 = canvas.toDataURL('image/png');
+
+                    // Mostrar miniatura
+                    document.getElementById('icon-preview').src = currentIconBase64;
+                    document.getElementById('icon-preview-container').classList.remove('hidden');
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
 
         // Renderizar Aplicaciones en Pantalla
         function renderApps() {
             appsGrid.innerHTML = '';
 
-            apps.forEach((app, index) => {
+            apps.forEach((app) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = "flex flex-col items-center w-full group";
                 
-                const onclickAction = !isAdmin ? `onclick="window.open('${app.url}', '_blank')"` : "";
+                const onclickAction = !isAdmin ? `onclick="window.handleAppClick('${app.id}')"` : "";
                 const cursorStyle = !isAdmin ? "cursor-pointer" : "cursor-default";
                 const hoverEffect = !isAdmin ? "group-hover:-translate-y-2 group-hover:shadow-2xl" : "";
 
+                // Candado visual si la app tiene PIN configurado
+                // En modo admin, movemos el candado abajo para no estorbar a los botones
+                const lockBadgePosition = isAdmin ? "-bottom-3 -right-3" : "-top-3 -left-3";
+                const lockBadge = (app.pin && app.pin.trim() !== "") ? `
+                    <div class="absolute ${lockBadgePosition} bg-slate-800 text-white p-2 rounded-full shadow-lg z-20 border-2 border-white" title="Requiere PIN">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </div>
+                ` : "";
+
                 let cardHTML = `
                     <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300 transform ${hoverEffect} ${cursorStyle}" ${onclickAction}>
-                        <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm transition-transform duration-300 ${!isAdmin ? 'group-hover:scale-105' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
+                        ${lockBadge}
+                        <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm rounded-2xl transition-transform duration-300 ${!isAdmin ? 'group-hover:scale-105' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
                     </div>
                     <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] transition-colors ${cursorStyle}" ${onclickAction}>${app.name}</h3>
                 `;
 
+                // Botones de edición en modo Admin
                 if (isAdmin) {
                     cardHTML = `
                         <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl shadow-xl flex items-center justify-center transition-all duration-300">
-                            <button class="delete-btn absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg transition-colors z-20 border-2 border-white" data-id="${app.id || index}">
+                            ${lockBadge}
+                            <!-- Botón Eliminar (Derecha) -->
+                            <button class="delete-btn absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg transition-colors z-20 border-2 border-white" data-id="${app.id}" title="Eliminar App">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                             </button>
-                            <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm opacity-50 grayscale transition-all" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
+                            <!-- Botón Editar (Izquierda) -->
+                            <button class="edit-btn absolute -top-3 -left-3 bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full shadow-lg transition-colors z-20 border-2 border-white" data-id="${app.id}" title="Editar App">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <img src="${app.icon}" alt="${app.name}" class="w-[90%] h-[90%] object-contain drop-shadow-sm rounded-2xl opacity-50 grayscale transition-all" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2721/2721291.png'">
                         </div>
                         <h3 class="font-bold text-white mt-4 text-center text-sm md:text-base drop-shadow-md leading-tight tracking-wide max-w-[150px] opacity-80">${app.name}</h3>
                     `;
@@ -199,10 +453,11 @@
                 appsGrid.appendChild(wrapper);
             });
 
+            // Tarjeta de Agregar App
             if (isAdmin) {
                 const addWrapper = document.createElement('div');
                 addWrapper.className = "flex flex-col items-center w-full group cursor-pointer";
-                addWrapper.id = "btn-open-modal";
+                addWrapper.id = "btn-open-add-modal";
                 
                 addWrapper.innerHTML = `
                     <div class="relative w-32 h-32 md:w-40 md:h-40 bg-white/20 border-2 border-dashed border-white/60 rounded-3xl flex items-center justify-center transition-all duration-300 transform group-hover:-translate-y-2 group-hover:bg-white/30 group-hover:border-white">
@@ -214,12 +469,19 @@
                 `;
                 appsGrid.appendChild(addWrapper);
 
-                document.getElementById('btn-open-modal').addEventListener('click', openModal);
+                document.getElementById('btn-open-add-modal').addEventListener('click', window.openAddModal);
                 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteApp(btn.getAttribute('data-id'));
+                    });
+                });
+
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        window.openEditModal(btn.getAttribute('data-id'));
                     });
                 });
             }
@@ -229,11 +491,9 @@
         // 4. LÓGICA DE FIREBASE Y GUARDADO
         // ==========================================
 
-        // Iniciar Firebase de forma segura
         async function initApp() {
             if (!firebaseConfig.apiKey) {
-                // Si no hay configuración, funciona en modo local (se borra al recargar)
-                console.warn("Firebase no conectado. Las apps no se guardarán en la nube.");
+                console.warn("Firebase no conectado.");
                 renderApps();
                 return;
             }
@@ -254,52 +514,80 @@
 
                 onAuthStateChanged(auth, (user) => {
                     currentUser = user;
-                    if (user) loadAppsFromCloud();
+                    if (user) {
+                        loadSettingsFromCloud();
+                        loadAppsFromCloud();
+                    }
                 });
             } catch (error) {
                 console.error("Error al inicializar Firebase:", error);
-                renderApps(); // Renderiza vacío si falla
+                renderApps();
             }
         }
 
-        // Cargar desde la nube
+        // Cargar Ajustes (El PIN del Admin)
+        function loadSettingsFromCloud() {
+            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admin');
+            if (unsubscribeSettings) unsubscribeSettings();
+            
+            unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
+                if (docSnap.exists() && docSnap.data().pin) {
+                    adminPin = docSnap.data().pin;
+                }
+            });
+        }
+
+        // Cargar Aplicaciones
         function loadAppsFromCloud() {
             const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
-            if (unsubscribe) unsubscribe();
+            if (unsubscribeApps) unsubscribeApps();
             
-            unsubscribe = onSnapshot(appsRef, (snapshot) => {
+            unsubscribeApps = onSnapshot(appsRef, (snapshot) => {
                 apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 apps.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                 spinner.classList.add('hidden');
                 renderApps();
             }, (error) => {
-                console.error("Error al cargar:", error);
+                console.error("Error al cargar apps:", error);
                 spinner.classList.add('hidden');
             });
         }
 
-        // Guardar Nueva App
+        // Guardar Nueva App o Editar Existente
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const newApp = {
+            if (!currentIconBase64) {
+                alert("Por favor, espera a que la imagen cargue o selecciona una.");
+                return;
+            }
+
+            const appData = {
                 name: document.getElementById('app-name').value,
                 url: document.getElementById('app-url').value,
-                icon: document.getElementById('app-icon').value,
-                createdAt: Date.now()
+                icon: currentIconBase64,
+                pin: document.getElementById('app-pin').value // El PIN se guarda con la App
             };
 
             if (isFirebaseActive && currentUser) {
-                // Guardar en la Nube
                 saveText.innerText = "Guardando...";
                 saveSpinner.classList.remove('hidden');
                 saveBtn.disabled = true;
 
                 try {
-                    const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
-                    await addDoc(appsRef, newApp);
-                    closeModal();
+                    if (editingAppId) {
+                        // Actualizar app existente en la nube
+                        const appRef = doc(db, 'artifacts', appId, 'public', 'data', 'apps', editingAppId);
+                        await updateDoc(appRef, appData);
+                    } else {
+                        // Crear app nueva en la nube
+                        appData.createdAt = Date.now();
+                        const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'apps');
+                        await addDoc(appsRef, appData);
+                    }
+                    closeAddModal();
                 } catch (error) {
+                    console.error(error);
                     alert("Hubo un error al guardar en la nube.");
                 } finally {
                     saveText.innerText = "Guardar App";
@@ -307,10 +595,15 @@
                     saveBtn.disabled = false;
                 }
             } else {
-                // Guardar Temporalmente (Local)
-                alert("⚠️ Has agregado la App, pero NO SE GUARDARÁ permanentemente porque falta configurar Firebase.");
-                apps.push(newApp);
-                closeModal();
+                if (editingAppId) {
+                    const index = apps.findIndex(a => a.id === editingAppId);
+                    if(index !== -1) apps[index] = { ...apps[index], ...appData };
+                } else {
+                    appData.id = Date.now().toString(); // ID temporal para el modo local
+                    appData.createdAt = Date.now();
+                    apps.push(appData);
+                }
+                closeAddModal();
                 renderApps();
             }
         });
@@ -326,13 +619,13 @@
                         alert("No se pudo eliminar de la nube.");
                     }
                 } else {
-                    apps = apps.filter((app, index) => app.id !== id && index != id);
+                    apps = apps.filter((app) => app.id !== id);
                     renderApps();
                 }
             }
         }
 
-        // Arrancar la aplicación
+        // Arrancar
         initApp();
     </script>
 </body>
